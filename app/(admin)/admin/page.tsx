@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 export const revalidate = 0
@@ -23,14 +23,19 @@ function formatDate(iso: string) {
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`
 }
 
-export default async function AdminPage() {
-  const supabase = createServerClient(
+function adminDb() {
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { cookies: { getAll: async () => (await cookies()).getAll() } },
+    { auth: { autoRefreshToken: false, persistSession: false } },
   )
+}
 
-  const { data: tenants } = await supabase
+export default async function AdminPage() {
+  await cookies() // 認証はlayout.tsxで保証済み
+  const db = adminDb()
+
+  const { data: tenants } = await db
     .from('tenants')
     .select('id, company_name, phone_number, plan, is_active, created_at')
     .order('created_at', { ascending: false })
