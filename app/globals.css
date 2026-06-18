@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f8fafc;
+  --sidebar: #1e293b;
+  --sidebar-text: #94a3b8;
+  --sidebar-active: #ffffff;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+}
+
+body {
+  background: var(--bg);
+  font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+}
