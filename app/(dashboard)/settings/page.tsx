@@ -1,23 +1,37 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as adminClient } from '@supabase/supabase-js'
+import { getCurrentTenantId } from '@/lib/get-current-tenant'
 import SettingsForm from './SettingsForm'
 
 export const revalidate = 0
 
+function db() {
+  return adminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  )
+}
+
 export default async function SettingsPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: tenant } = await supabase
+  const tenantId = await getCurrentTenantId(user?.email)
+  if (!tenantId) return <p className="text-slate-500">テナントが選択されていません</p>
+
+  const { data: tenant } = await db()
     .from('tenants')
     .select('id, company_name, phone_number')
-    .eq('is_active', true)
+    .eq('id', tenantId)
     .single()
 
   if (!tenant) return <p className="text-slate-500">テナントが見つかりません</p>
 
-  const { data: settings } = await supabase
+  const { data: settings } = await db()
     .from('tenant_settings')
     .select('*')
-    .eq('tenant_id', tenant.id)
+    .eq('tenant_id', tenantId)
     .single()
 
   return (

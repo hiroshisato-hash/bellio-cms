@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as adminClient } from '@supabase/supabase-js'
+import { getCurrentTenantId } from '@/lib/get-current-tenant'
 
 export const revalidate = 0
 
@@ -30,21 +32,25 @@ function formatDate(iso: string) {
   return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
+function db() {
+  return adminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  )
+}
+
 export default async function CallLogsPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('id')
-    .eq('is_active', true)
-    .single()
+  const tenantId = await getCurrentTenantId(user?.email)
+  if (!tenantId) return <p className="text-slate-500">テナントが選択されていません</p>
 
-  if (!tenant) return <p className="text-slate-500">テナントが見つかりません</p>
-
-  const { data: logs } = await supabase
+  const { data: logs } = await db()
     .from('call_logs')
     .select('id, caller_number, call_duration_seconds, outcome, transcript, created_at')
-    .eq('tenant_id', tenant.id)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .limit(100)
 
@@ -82,13 +88,9 @@ export default async function CallLogsPage() {
                   <td className="px-4 py-3 font-mono text-slate-700">{log.caller_number}</td>
                   <td className="px-4 py-3 text-slate-600">{formatDuration(log.call_duration_seconds)}</td>
                   <td className="px-4 py-3">
-                    {out && (
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${out.cls}`}>{out.label}</span>
-                    )}
+                    {out && <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${out.cls}`}>{out.label}</span>}
                   </td>
-                  <td className="px-4 py-3 text-slate-500 text-xs max-w-sm truncate">
-                    {log.transcript ?? '-'}
-                  </td>
+                  <td className="px-4 py-3 text-slate-500 text-xs max-w-sm truncate">{log.transcript ?? '-'}</td>
                 </tr>
               )
             })}

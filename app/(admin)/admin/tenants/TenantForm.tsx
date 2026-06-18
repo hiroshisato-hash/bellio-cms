@@ -29,6 +29,15 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  async function handleViewTenant() {
+    await fetch('/api/admin/switch-tenant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantId: initialTenant?.id }),
+    })
+    window.location.href = '/callbacks'
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
@@ -134,13 +143,24 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
         {error && <p className="text-red-400 text-sm">{error}</p>}
         {success && <p className="text-green-400 text-sm">{success}</p>}
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="self-start bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition disabled:opacity-50"
-        >
-          {saving ? '保存中...' : isEdit ? '保存' : 'テナント作成'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={saving}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition disabled:opacity-50"
+          >
+            {saving ? '保存中...' : isEdit ? '保存' : 'テナント作成'}
+          </button>
+          {isEdit && (
+            <button
+              type="button"
+              onClick={handleViewTenant}
+              className="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-5 py-2 rounded-lg transition"
+            >
+              テナント画面を開く →
+            </button>
+          )}
+        </div>
       </form>
 
       {/* ユーザー発行（編集時のみ） */}

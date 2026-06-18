@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as adminClient } from '@supabase/supabase-js'
+import { getCurrentTenantId } from '@/lib/get-current-tenant'
 import FaqForm from './FaqForm'
 import FaqDelete from './FaqDelete'
 
@@ -13,21 +15,25 @@ type FaqItem = {
   created_at: string
 }
 
+function db() {
+  return adminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  )
+}
+
 export default async function FaqsPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('id')
-    .eq('is_active', true)
-    .single()
+  const tenantId = await getCurrentTenantId(user?.email)
+  if (!tenantId) return <p className="text-slate-500">テナントが選択されていません</p>
 
-  if (!tenant) return <p className="text-slate-500">テナントが見つかりません</p>
-
-  const { data: faqs } = await supabase
+  const { data: faqs } = await db()
     .from('faq_items')
     .select('id, question, answer, hit_count, is_active, created_at')
-    .eq('tenant_id', tenant.id)
+    .eq('tenant_id', tenantId)
     .order('hit_count', { ascending: false })
 
   return (
@@ -37,7 +43,7 @@ export default async function FaqsPage() {
         <span className="text-slate-400 text-sm">{faqs?.length ?? 0} 件</span>
       </div>
 
-      <FaqForm tenantId={tenant.id} />
+      <FaqForm tenantId={tenantId} />
 
       <div className="mt-6 flex flex-col gap-3">
         {faqs?.map((faq: FaqItem) => (

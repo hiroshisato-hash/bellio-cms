@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as adminClient } from '@supabase/supabase-js'
+import { getCurrentTenantId } from '@/lib/get-current-tenant'
 import CallbackActions from './CallbackActions'
 
 export const revalidate = 0
@@ -28,33 +30,33 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
   cancelled:  { label: 'キャンセル', cls: 'bg-slate-100 text-slate-500' },
 }
 
+function db() {
+  return adminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  )
+}
+
 export default async function CallbacksPage() {
   const supabase = await createClient()
-  const { data: user } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // テナント取得
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('id')
-    .eq('is_active', true)
-    .single()
+  const tenantId = await getCurrentTenantId(user?.email)
+  if (!tenantId) return <p className="text-slate-500">テナントが選択されていません</p>
 
-  if (!tenant) {
-    return <p className="text-slate-500">テナントが見つかりません</p>
-  }
-
-  const { data: callbacks } = await supabase
+  const { data: callbacks } = await db()
     .from('callback_requests')
     .select('*, employees(name)')
-    .eq('tenant_id', tenant.id)
+    .eq('tenant_id', tenantId)
     .in('status', ['pending', 'in_progress'])
     .order('priority', { ascending: false })
     .order('created_at', { ascending: true })
 
-  const { data: completed } = await supabase
+  const { data: completed } = await db()
     .from('callback_requests')
     .select('*, employees(name)')
-    .eq('tenant_id', tenant.id)
+    .eq('tenant_id', tenantId)
     .in('status', ['completed', 'cancelled'])
     .order('created_at', { ascending: false })
     .limit(20)
@@ -74,7 +76,6 @@ export default async function CallbacksPage() {
         </span>
       </div>
 
-      {/* アクティブキュー */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-8">
         <table className="w-full text-sm">
           <thead>
@@ -126,7 +127,6 @@ export default async function CallbacksPage() {
         </table>
       </div>
 
-      {/* 完了済み */}
       {(completed?.length ?? 0) > 0 && (
         <>
           <h2 className="text-lg font-semibold text-slate-600 mb-3">完了済み（直近20件）</h2>
