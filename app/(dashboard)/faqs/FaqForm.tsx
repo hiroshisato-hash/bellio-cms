@@ -40,7 +40,7 @@ export default function FaqForm({ tenantId }: { tenantId: string }) {
           onChange={e => setQuestion(e.target.value)}
           required
           placeholder="例：営業時間を教えてください"
-          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
         />
       </div>
       <div>
@@ -51,14 +51,14 @@ export default function FaqForm({ tenantId }: { tenantId: string }) {
           required
           rows={3}
           placeholder="例：営業時間は月曜から金曜の9時から18時です。"
-          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
         />
       </div>
       {error && <p className="text-red-500 text-sm">{error}</p>}
       <button
         type="submit"
         disabled={loading}
-        className="self-start bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50"
+        className="self-start bg-yellow-400 hover:bg-yellow-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50"
       >
         {loading ? '登録中（embedding生成）...' : '+ 追加'}
       </button>

@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <nav className="w-56 shrink-0 flex flex-col py-6 px-4 border-r border-slate-700">
         <div className="mb-8">
           <span className="text-white font-bold text-lg">Bellio</span>
-          <span className="ml-2 text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">Admin</span>
+          <span className="ml-2 text-xs bg-yellow-400 text-slate-900 font-semibold px-2 py-0.5 rounded-full">Admin</span>
         </div>
         <div className="flex flex-col gap-1 flex-1">
           <a href="/admin" className="text-slate-300 hover:text-white hover:bg-slate-800 px-3 py-2 rounded-lg text-sm transition">

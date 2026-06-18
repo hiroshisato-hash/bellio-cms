@@ -50,8 +50,8 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
                 active
-                  ? 'bg-indigo-600 text-white font-medium'
-                  : 'text-slate-400 hover:bg-slate-700 hover:text-white'
+                  ? 'bg-yellow-400 text-slate-900 font-medium'
+                  : 'text-slate-400 hover:bg-slate-700 hover:text-yellow-400'
               }`}
             >
               <span>{item.icon}</span>
@@ -64,7 +64,7 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
         {isAdmin && (
           <button
             onClick={handleBackToAdmin}
-            className="w-full text-left px-3 py-2 text-sm text-purple-400 hover:text-white hover:bg-slate-700 rounded-lg transition"
+            className="w-full text-left px-3 py-2 text-sm text-yellow-400 hover:text-white hover:bg-slate-700 rounded-lg transition"
           >
             ← Admin画面に戻る
           </button>

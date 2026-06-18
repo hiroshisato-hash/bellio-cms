@@ -15,7 +15,7 @@ type Tenant = {
 const planLabel: Record<string, { label: string; cls: string }> = {
   basic:      { label: 'Basic',      cls: 'bg-slate-700 text-slate-300' },
   pro:        { label: 'Pro',        cls: 'bg-blue-800 text-blue-200' },
-  enterprise: { label: 'Enterprise', cls: 'bg-purple-800 text-purple-200' },
+  enterprise: { label: 'Enterprise', cls: 'bg-yellow-400 text-slate-900' },
 }
 
 function formatDate(iso: string) {
@@ -46,7 +46,7 @@ export default async function AdminPage() {
         <h1 className="text-2xl font-bold">テナント一覧</h1>
         <a
           href="/admin/tenants/new"
-          className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+          className="bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-sm font-medium px-4 py-2 rounded-lg transition"
         >
           + テナント追加
         </a>
@@ -89,7 +89,7 @@ export default async function AdminPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-400 text-xs">{formatDate(t.created_at)}</td>
                   <td className="px-4 py-3">
-                    <a href={`/admin/tenants/${t.id}`} className="text-xs text-indigo-400 hover:text-indigo-300 transition">
+                    <a href={`/admin/tenants/${t.id}`} className="text-xs text-yellow-400 hover:text-yellow-300 transition">
                       編集 →
                     </a>
                   </td>

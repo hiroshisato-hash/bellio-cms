@@ -98,7 +98,7 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
             onChange={e => setCompanyName(e.target.value)}
             required
             placeholder="例：株式会社○○"
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
 
@@ -109,7 +109,7 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
             onChange={e => setPhoneNumber(e.target.value)}
             required
             placeholder="+815012345678"
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
         </div>
 
@@ -118,7 +118,7 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
           <select
             value={plan}
             onChange={e => setPlan(e.target.value)}
-            className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
             <option value="basic">Basic</option>
             <option value="pro">Pro</option>
@@ -131,7 +131,7 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
             type="checkbox"
             checked={isActive}
             onChange={e => setIsActive(e.target.checked)}
-            className="accent-indigo-500"
+            className="accent-yellow-400"
           />
           有効（チェックを外すと通話受付停止）
         </label>
@@ -143,7 +143,7 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
           <button
             type="submit"
             disabled={saving}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition disabled:opacity-50"
+            className="bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-sm font-medium px-5 py-2 rounded-lg transition disabled:opacity-50"
           >
             {saving ? '保存中...' : isEdit ? '保存' : 'テナント作成'}
           </button>
@@ -170,7 +170,7 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
               onChange={e => setUserEmail(e.target.value)}
               required
               placeholder="customer@example.com"
-              className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
             <button
               type="submit"

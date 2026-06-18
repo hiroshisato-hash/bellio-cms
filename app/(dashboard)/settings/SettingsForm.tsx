@@ -73,7 +73,7 @@ export default function SettingsForm({
           value={greeting}
           onChange={e => setGreeting(e.target.value)}
           rows={3}
-          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
         />
       </div>
 
@@ -82,7 +82,7 @@ export default function SettingsForm({
         <select
           value={mode}
           onChange={e => setMode(e.target.value)}
-          className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
         >
           <option value="hybrid">ハイブリッド（FAQ解決 + 折り返し）</option>
           <option value="faq_only">FAQのみ</option>
@@ -99,7 +99,7 @@ export default function SettingsForm({
           step="0.01"
           value={threshold}
           onChange={e => setThreshold(e.target.value)}
-          className="w-32 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-32 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
         />
         <p className="text-xs text-slate-400 mt-1">高いほど厳密にマッチしたときだけFAQを返す。低いと誤マッチしやすい。</p>
       </div>
@@ -111,7 +111,7 @@ export default function SettingsForm({
           onChange={e => setKeywords(e.target.value)}
           rows={4}
           placeholder={'緊急\n事故\n火事\n大至急'}
-          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none font-mono"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none font-mono"
         />
         <p className="text-xs text-slate-400 mt-1">このワードが含まれると最優先の折り返し（priority=10）として登録します。</p>
       </div>
@@ -122,7 +122,7 @@ export default function SettingsForm({
       <button
         type="submit"
         disabled={saving}
-        className="self-start bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition disabled:opacity-50"
+        className="self-start bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-sm font-medium px-5 py-2 rounded-lg transition disabled:opacity-50"
       >
         {saving ? '保存中...' : '保存'}
       </button>
