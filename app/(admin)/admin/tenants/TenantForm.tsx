@@ -20,9 +20,7 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
   const [plan, setPlan] = useState(initialTenant?.plan ?? 'basic')
   const [isActive, setIsActive] = useState(initialTenant?.is_active ?? true)
 
-  // user account creation
   const [userEmail, setUserEmail] = useState('')
-  const [userPassword, setUserPassword] = useState('')
 
   const [saving, setSaving] = useState(false)
   const [issuing, setIssuing] = useState(false)
@@ -75,16 +73,14 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
       body: JSON.stringify({
         tenantId: initialTenant?.id,
         email: userEmail,
-        password: userPassword,
       }),
     })
     const json = await res.json()
     if (!res.ok) {
       setError(json.error ?? 'エラー')
     } else {
-      setSuccess(`ユーザー発行完了: ${userEmail}`)
+      setSuccess(`招待メールを送信しました: ${userEmail}`)
       setUserEmail('')
-      setUserPassword('')
     }
     setIssuing(false)
   }
@@ -176,22 +172,15 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
               placeholder="customer@example.com"
               className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
-            <input
-              type="text"
-              value={userPassword}
-              onChange={e => setUserPassword(e.target.value)}
-              required
-              placeholder="初期パスワード"
-              className="w-40 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
             <button
               type="submit"
               disabled={issuing}
               className="bg-green-700 hover:bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50 whitespace-nowrap"
             >
-              {issuing ? '発行中...' : '発行'}
+              {issuing ? '送信中...' : '招待メール送信'}
             </button>
           </div>
+          <p className="text-xs text-slate-500">Supabaseから招待メールが届きます。ユーザーはリンクをクリックしてパスワードを設定します。</p>
         </form>
       )}
     </div>

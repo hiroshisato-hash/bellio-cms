@@ -20,24 +20,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { tenantId, email, password } = await req.json()
-  if (!tenantId || !email || !password) {
-    return NextResponse.json({ error: 'tenantId / email / password が必要です' }, { status: 400 })
+  const { email } = await req.json()
+  if (!email) {
+    return NextResponse.json({ error: 'email が必要です' }, { status: 400 })
   }
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/users`, {
+  // Supabase invite → 招待メールを送信（ユーザーがリンクをクリックしてパスワード設定）
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/invite`, {
     method: 'POST',
     headers: {
       apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
       Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email, password, email_confirm: true }),
+    body: JSON.stringify({ email }),
   })
 
   const json = await res.json()
   if (!res.ok) {
-    return NextResponse.json({ error: json.msg ?? json.message ?? 'ユーザー作成失敗' }, { status: 500 })
+    return NextResponse.json({ error: json.msg ?? json.message ?? '招待メール送信失敗' }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true, userId: json.id, email: json.email })
