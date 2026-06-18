@@ -27,41 +27,18 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
   const isAuthPage = pathname.startsWith('/login')
-  const isPublicAuthPage = pathname.startsWith('/forgot-password')
-  const isAuthCallback = pathname.startsWith('/auth/') || pathname.startsWith('/api/auth/line/')
-  const isCron = pathname.startsWith('/api/cron')
-  const isWebhook = pathname.startsWith('/api/webhook/')
-  const isAdminRoute = pathname.startsWith('/admin')
-  const isSignupPage = pathname.startsWith('/signup')
-  const isLiff = pathname === '/l' || pathname.startsWith('/l/') || pathname.startsWith('/member/')
+  const isApiRoute = pathname.startsWith('/api/')
 
-  if (!user && !isAuthPage && !isPublicAuthPage && !isAuthCallback && !isCron && !isWebhook && !isSignupPage && !isLiff) {
+  if (!user && !isAuthPage && !isApiRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  if (user && (isAuthPage || isPublicAuthPage) && request.method === 'GET') {
+  if (user && isAuthPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
-  }
-
-  // /admin/* は super_admin のみアクセス可
-  if (user && isAdminRoute) {
-    const { data: role } = await supabase
-      .from('user_salon_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'super_admin')
-      .limit(1)
-      .maybeSingle()
-
-    if (!role) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/'
-      return NextResponse.redirect(url)
-    }
   }
 
   return supabaseResponse
