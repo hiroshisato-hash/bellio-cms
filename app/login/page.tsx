@@ -21,7 +21,7 @@ export default function LoginPage() {
       setError('メールアドレスまたはパスワードが正しくありません')
       setLoading(false)
     } else {
-      router.push('/callbacks')
+      router.push('/')
     }
   }
 
