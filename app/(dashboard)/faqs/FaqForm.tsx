@@ -2,10 +2,18 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import type { Category } from './CategoryManager'
 
-export default function FaqForm({ tenantId }: { tenantId: string }) {
+export default function FaqForm({
+  tenantId,
+  categories,
+}: {
+  tenantId: string
+  categories: Category[]
+}) {
   const [question, setQuestion] = useState('')
   const [answer, setAnswer] = useState('')
+  const [categoryId, setCategoryId] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -17,7 +25,7 @@ export default function FaqForm({ tenantId }: { tenantId: string }) {
     const res = await fetch('/api/faqs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tenantId, question, answer }),
+      body: JSON.stringify({ tenantId, question, answer, categoryId: categoryId || null }),
     })
     const json = await res.json()
     if (!res.ok) {
@@ -25,6 +33,7 @@ export default function FaqForm({ tenantId }: { tenantId: string }) {
     } else {
       setQuestion('')
       setAnswer('')
+      setCategoryId('')
       router.refresh()
     }
     setLoading(false)
@@ -33,6 +42,21 @@ export default function FaqForm({ tenantId }: { tenantId: string }) {
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 flex flex-col gap-3">
       <h2 className="font-semibold text-slate-700">新規FAQ追加</h2>
+      {categories.length > 0 && (
+        <div>
+          <label className="text-xs text-slate-500 mb-1 block">カテゴリ（任意）</label>
+          <select
+            value={categoryId}
+            onChange={e => setCategoryId(e.target.value)}
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+          >
+            <option value="">未分類</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
       <div>
         <label className="text-xs text-slate-500 mb-1 block">質問（電話で言われる言葉）</label>
         <input

@@ -8,6 +8,7 @@ const navItems = [
   { href: '/callbacks', label: '折り返しキュー', icon: '📞' },
   { href: '/staff',     label: '担当者管理',     icon: '👤' },
   { href: '/faqs',      label: 'FAQ管理',       icon: '💬' },
+  { href: '/flow',      label: '会話フロー',     icon: '🔀' },
   { href: '/call-logs', label: '通話履歴',       icon: '📋' },
   { href: '/settings',  label: '設定',           icon: '⚙️' },
 ]

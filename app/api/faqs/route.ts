@@ -3,7 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function POST(req: NextRequest) {
-  const { tenantId, question, answer } = await req.json()
+  const { tenantId, question, answer, categoryId } = await req.json()
   if (!tenantId || !question || !answer) {
     return NextResponse.json({ error: 'tenantId / question / answer が必要です' }, { status: 400 })
   }
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     question,
     answer,
     embedding,
+    category_id: categoryId ?? null,
     is_active: true,
     hit_count: 0,
   })
