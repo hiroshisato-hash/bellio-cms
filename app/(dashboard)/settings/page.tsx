@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as adminClient } from '@supabase/supabase-js'
 import { getCurrentTenantId } from '@/lib/get-current-tenant'
 import SettingsForm from './SettingsForm'
+import BlockedNumbers from './BlockedNumbers'
 
 export const revalidate = 0
 
@@ -49,6 +50,7 @@ export default async function SettingsPage() {
       </div>
 
       <SettingsForm tenantId={tenant.id} initialSettings={settings} />
+      <BlockedNumbers />
     </div>
   )
 }
