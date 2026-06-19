@@ -4,8 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
+const GREETING_PREFIX = 'お電話ありがとうございます。{会社名}でございます。この通話は、サービス品質向上およびAI応対の改善のため録音させていただいております。'
+
 type TenantSettings = {
   greeting_text: string | null
+  company_name_reading: string | null
   mode: string | null
   faq_threshold: number | null
   urgent_keywords: string[] | null
@@ -56,7 +59,8 @@ export default function SettingsForm({
   const bhSat = bh?.saturday as { start?: string; end?: string } | null
   const bhSun = bh?.sunday as { start?: string; end?: string } | null
 
-  const [greeting, setGreeting] = useState(initialSettings?.greeting_text ?? '')
+  const [greetingSuffix, setGreetingSuffix] = useState(initialSettings?.greeting_text ?? 'ご用件をどうぞ。')
+  const [companyNameReading, setCompanyNameReading] = useState(initialSettings?.company_name_reading ?? '')
   const [mode, setMode] = useState(initialSettings?.mode ?? 'hybrid')
   const [threshold, setThreshold] = useState(String(initialSettings?.faq_threshold ?? 0.75))
   const [keywords, setKeywords] = useState((initialSettings?.urgent_keywords ?? []).join('\n'))
@@ -98,7 +102,8 @@ export default function SettingsForm({
       .upsert(
         {
           tenant_id: tenantId,
-          greeting_text: greeting,
+          greeting_text: greetingSuffix.trim() || 'ご用件をどうぞ。',
+          company_name_reading: companyNameReading.trim() || null,
           mode,
           faq_threshold: parseFloat(threshold),
           urgent_keywords: urgentKeywords,
@@ -125,13 +130,32 @@ export default function SettingsForm({
         <h2 className="font-semibold text-slate-700">AI設定</h2>
 
         <div>
-          <label className="text-xs text-slate-500 mb-1 block">挨拶文（AIが最初に読み上げるテキスト）</label>
-          <textarea
-            value={greeting}
-            onChange={e => setGreeting(e.target.value)}
-            rows={3}
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
+          <label className="text-xs text-slate-500 mb-1 block">会社名の読み（TTS発音用）</label>
+          <input
+            value={companyNameReading}
+            onChange={e => setCompanyNameReading(e.target.value)}
+            placeholder="例: カブシキガイシャ〇〇"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
+          <p className="text-xs text-slate-400 mt-1">カタカナで入力してください。AIが挨拶時に読み上げる会社名の発音に使用します。</p>
+        </div>
+
+        <div>
+          <label className="text-xs text-slate-500 mb-2 block">最初の発話</label>
+          <div className="rounded-lg border border-slate-200 overflow-hidden text-sm">
+            <div className="bg-slate-50 px-3 py-2.5 text-slate-400 leading-relaxed select-none border-b border-slate-200">
+              お電話ありがとうございます。{'{会社名}'}でございます。この通話は、サービス品質向上およびAI応対の改善のため録音させていただいております。
+              <span className="inline-block ml-1 text-xs bg-slate-200 text-slate-500 rounded px-1">変更不可</span>
+            </div>
+            <textarea
+              value={greetingSuffix}
+              onChange={e => setGreetingSuffix(e.target.value)}
+              rows={2}
+              placeholder="ご用件をどうぞ。"
+              className="w-full px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
+            />
+          </div>
+          <p className="text-xs text-slate-400 mt-1">固定の挨拶文に続いて読み上げられるテキストを入力してください。</p>
         </div>
 
         <div>
