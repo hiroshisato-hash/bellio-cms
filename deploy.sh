@@ -28,7 +28,7 @@ case "$TARGET" in
     echo "→ bellio-cms-staging にデプロイ中..."
     write_project "prj_jTy4HyEBmLdzZdjh1WSNGuuyz5Ud" "bellio-cms-staging"
     trap restore EXIT
-    npx vercel --yes --scope "$SCOPE"
+    npx vercel --prod --yes --scope "$SCOPE"
     ;;
   prod|production)
     echo "→ bellio-cms 本番にデプロイ中..."
