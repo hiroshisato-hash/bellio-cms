@@ -47,8 +47,13 @@ const STATE_LABEL: Record<string, string> = Object.fromEntries(
 const PALETTE: { kind: string; label: string; icon: string; desc: string }[] = [
   { kind: 'message',  label: 'メッセージ', icon: '💬', desc: 'AIが話す内容' },
   { kind: 'callback', label: '折り返し受付', icon: '🔔', desc: '折り返しフローへ' },
+  { kind: 'notify',   label: '通知',       icon: '📢', desc: '担当者へSlack通知' },
+  { kind: 'sms',      label: 'SMS送信',    icon: '📨', desc: '発信者へSMS' },
   { kind: 'end',      label: '通話終了',   icon: '👋', desc: '通話を終える' },
 ]
+
+// 発話ノード（AIが喋る）か、アクションノード（通知/SMS）か
+const ACTION_KINDS = new Set(['notify', 'sms'])
 
 // ---- カスタムノード ----
 
@@ -130,12 +135,58 @@ function EndNode({ data }: { data: { message?: string } }) {
   )
 }
 
+// 通知ノード（担当者へSlack通知）
+function NotifyNode({ data }: { data: { message?: string; stateKey?: string } }) {
+  return (
+    <div className="bg-orange-50 border border-orange-300 rounded-2xl shadow-sm px-4 py-3 max-w-[240px]">
+      <Handle type="target" position={Position.Top} className="!bg-orange-400 !w-3 !h-3" />
+      <div className="flex items-center gap-1 mb-1">
+        <span className="text-sm">📢</span>
+        <span className="text-xs font-semibold text-orange-700">通知（Slack）</span>
+      </div>
+      {data.stateKey && (
+        <div className="inline-block text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded mb-1">
+          {STATE_LABEL[data.stateKey] ?? data.stateKey} で発火
+        </div>
+      )}
+      <div className="text-xs text-slate-500 line-clamp-2">
+        {data.message ? data.message : <span className="text-slate-300">（通知文 未設定）</span>}
+      </div>
+      <Handle type="source" position={Position.Bottom} className="!bg-orange-400 !w-3 !h-3" />
+    </div>
+  )
+}
+
+// SMS送信ノード（発信者へSMS）
+function SmsNode({ data }: { data: { message?: string; stateKey?: string } }) {
+  return (
+    <div className="bg-sky-50 border border-sky-300 rounded-2xl shadow-sm px-4 py-3 max-w-[240px]">
+      <Handle type="target" position={Position.Top} className="!bg-sky-400 !w-3 !h-3" />
+      <div className="flex items-center gap-1 mb-1">
+        <span className="text-sm">📨</span>
+        <span className="text-xs font-semibold text-sky-700">SMS送信</span>
+      </div>
+      {data.stateKey && (
+        <div className="inline-block text-[10px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded mb-1">
+          {STATE_LABEL[data.stateKey] ?? data.stateKey} で送信
+        </div>
+      )}
+      <div className="text-xs text-slate-500 line-clamp-2">
+        {data.message ? data.message : <span className="text-slate-300">（本文 未設定）</span>}
+      </div>
+      <Handle type="source" position={Position.Bottom} className="!bg-sky-400 !w-3 !h-3" />
+    </div>
+  )
+}
+
 const nodeTypes = {
   start: StartNode,
   category: CategoryNode,
   faq: FaqNode,
   message: MessageNode,
   callback: CallbackNode,
+  notify: NotifyNode,
+  sms: SmsNode,
   end: EndNode,
 }
 
@@ -276,6 +327,8 @@ function FlowCanvas({
       const defaults: Record<string, Record<string, unknown>> = {
         message:  { label: 'メッセージ', message: '', stateKey: '' },
         callback: { message: '' },
+        notify:   { message: '', stateKey: 'CALLBACK_CONFIRM' },
+        sms:      { message: '', stateKey: 'CALLBACK_CONFIRM' },
         end:      { stateKey: 'END', message: '' },
       }
       const newNode: Node = {
@@ -370,6 +423,8 @@ function FlowCanvas({
               if (n.type === 'category') return '#facc15'
               if (n.type === 'faq') return '#93c5fd'
               if (n.type === 'callback') return '#86efac'
+              if (n.type === 'notify') return '#fdba74'
+              if (n.type === 'sms') return '#7dd3fc'
               if (n.type === 'message') return '#cbd5e1'
               return '#e2e8f0'
             }}
@@ -416,6 +471,68 @@ function FlowCanvas({
             <p className="text-[11px] text-slate-400 mt-3">
               カテゴリ名は「FAQ管理」画面で編集してください。
             </p>
+          </div>
+        ) : ACTION_KINDS.has(selectedNode.type ?? '') ? (
+          <div className="flex flex-col gap-4">
+            <h3 className="font-semibold text-slate-700 text-sm">
+              {selectedNode.type === 'notify' ? '📢 通知ノード' : '📨 SMS送信ノード'}
+            </h3>
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              {selectedNode.type === 'notify'
+                ? '指定した場面に到達した時、担当者のSlackへ通知します。'
+                : '指定した場面に到達した時、発信者の電話番号へSMSを送ります。'}
+            </p>
+
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">
+                {selectedNode.type === 'notify' ? '通知する場面（ステート）' : '送信する場面（ステート）'}
+              </label>
+              <select
+                value={(selectedNode.data as { stateKey?: string }).stateKey ?? ''}
+                onChange={e => updateSelected({ stateKey: e.target.value })}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              >
+                <option value="">（紐付けなし＝発火しない）</option>
+                {STATE_OPTIONS.map(o => (
+                  <option key={o.key} value={o.key}>{o.label}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-400 mt-1">
+                例：「折り返し内容の復唱」に紐付けると、折り返し受付が完了した瞬間に発火します。
+              </p>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">
+                {selectedNode.type === 'notify' ? '通知の本文' : 'SMSの本文'}
+              </label>
+              <textarea
+                value={(selectedNode.data as { message?: string }).message ?? ''}
+                onChange={e => updateSelected({ message: e.target.value })}
+                rows={5}
+                placeholder={selectedNode.type === 'notify'
+                  ? '例：📞 {{name}}様より折り返し依頼が入りました。'
+                  : '例：{{company}}です。ご予約はこちら→ https://...'}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
+              />
+              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                使える差し込み: <code className="bg-slate-100 px-1 rounded">{'{{company}}'}</code> 会社名 /{' '}
+                <code className="bg-slate-100 px-1 rounded">{'{{name}}'}</code> お客様名 /{' '}
+                <code className="bg-slate-100 px-1 rounded">{'{{employee}}'}</code> 担当者 /{' '}
+                <code className="bg-slate-100 px-1 rounded">{'{{time}}'}</code> 折返し時間
+              </p>
+            </div>
+
+            {selectedNode.type === 'notify' && (
+              <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-3">
+                通知先のSlack Webhookは「設定」画面の通知チャネルで設定してください。未設定の場合は送信されません。
+              </p>
+            )}
+            {selectedNode.type === 'sms' && (
+              <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-3">
+                発信者の番号（携帯）宛にテナントの電話番号から送信します。固定電話発信にはSMSは届きません。
+              </p>
+            )}
           </div>
         ) : editable ? (
           <div className="flex flex-col gap-4">
