@@ -44,16 +44,21 @@ const STATE_LABEL: Record<string, string> = Object.fromEntries(
 )
 
 // パレット（ドラッグして追加できるノード種別）
-const PALETTE: { kind: string; label: string; icon: string; desc: string }[] = [
-  { kind: 'message',  label: 'メッセージ', icon: '💬', desc: 'AIが話す内容' },
-  { kind: 'callback', label: '折り返し受付', icon: '🔔', desc: '折り返しフローへ' },
-  { kind: 'notify',   label: '通知',       icon: '📢', desc: '担当者へSlack通知' },
-  { kind: 'sms',      label: 'SMS送信',    icon: '📨', desc: '発信者へSMS' },
-  { kind: 'end',      label: '通話終了',   icon: '👋', desc: '通話を終える' },
+const PALETTE: { kind: string; label: string; icon: string; desc: string; group: string }[] = [
+  { kind: 'message',   label: 'メッセージ',  icon: '💬', desc: 'AIが話す内容',       group: '発話' },
+  { kind: 'branch',    label: '条件分岐',    icon: '🔀', desc: '発言で枝分かれ',     group: '分岐' },
+  { kind: 'faqLookup', label: 'FAQ検索',     icon: '🔎', desc: 'ヒット/ミスで分岐',  group: '分岐' },
+  { kind: 'collect',   label: 'スロット収集', icon: '🎙️', desc: '聞いて変数に保存',  group: '分岐' },
+  { kind: 'callback',  label: '折り返し受付', icon: '🔔', desc: '折り返しを登録',     group: 'アクション' },
+  { kind: 'notify',    label: '通知',        icon: '📢', desc: '担当者へSlack通知',  group: 'アクション' },
+  { kind: 'sms',       label: 'SMS送信',     icon: '📨', desc: '発信者へSMS',        group: 'アクション' },
+  { kind: 'end',       label: '通話終了',    icon: '👋', desc: '通話を終える',       group: '終了' },
 ]
 
-// 発話ノード（AIが喋る）か、アクションノード（通知/SMS）か
+// アクションノード（通知/SMS）
 const ACTION_KINDS = new Set(['notify', 'sms'])
+// グラフ駆動ノード（分岐系）
+const GRAPH_KINDS = new Set(['branch', 'faqLookup', 'collect'])
 
 // ---- カスタムノード ----
 
@@ -179,11 +184,72 @@ function SmsNode({ data }: { data: { message?: string; stateKey?: string } }) {
   )
 }
 
+// 条件分岐ノード
+function BranchNode({ data }: { data: { message?: string } }) {
+  return (
+    <div className="bg-violet-50 border-2 border-violet-400 rounded-2xl shadow-sm px-4 py-3 max-w-[240px]">
+      <Handle type="target" position={Position.Top} className="!bg-violet-400 !w-3 !h-3" />
+      <div className="flex items-center gap-1 mb-1">
+        <span className="text-sm">🔀</span>
+        <span className="text-xs font-semibold text-violet-700">条件分岐</span>
+      </div>
+      <div className="text-xs text-slate-600 line-clamp-2">
+        {data.message ? `「${data.message}」` : <span className="text-slate-300">（質問文 未設定）</span>}
+      </div>
+      <p className="text-[10px] text-violet-400 mt-1">出口の線にキーワードを設定</p>
+      <Handle type="source" position={Position.Bottom} className="!bg-violet-400 !w-3 !h-3" />
+    </div>
+  )
+}
+
+// FAQ検索ノード
+function FaqLookupNode({ data }: { data: { message?: string } }) {
+  return (
+    <div className="bg-blue-50 border-2 border-blue-400 rounded-2xl shadow-sm px-4 py-3 max-w-[240px]">
+      <Handle type="target" position={Position.Top} className="!bg-blue-400 !w-3 !h-3" />
+      <div className="flex items-center gap-1 mb-1">
+        <span className="text-sm">🔎</span>
+        <span className="text-xs font-semibold text-blue-700">FAQ検索</span>
+      </div>
+      <div className="text-xs text-slate-600 line-clamp-2">
+        {data.message ? `「${data.message}」` : <span className="text-slate-300">（聞き出し文 未設定）</span>}
+      </div>
+      <p className="text-[10px] text-blue-400 mt-1">出口の線をヒット/ミスに設定</p>
+      <Handle type="source" position={Position.Bottom} className="!bg-blue-400 !w-3 !h-3" />
+    </div>
+  )
+}
+
+// スロット収集ノード
+function CollectNode({ data }: { data: { message?: string; variable?: string } }) {
+  return (
+    <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl shadow-sm px-4 py-3 max-w-[240px]">
+      <Handle type="target" position={Position.Top} className="!bg-amber-400 !w-3 !h-3" />
+      <div className="flex items-center gap-1 mb-1">
+        <span className="text-sm">🎙️</span>
+        <span className="text-xs font-semibold text-amber-700">スロット収集</span>
+      </div>
+      <div className="text-xs text-slate-600 line-clamp-2">
+        {data.message ? `「${data.message}」` : <span className="text-slate-300">（質問文 未設定）</span>}
+      </div>
+      {data.variable && (
+        <div className="inline-block text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded mt-1">
+          → {`{{${data.variable}}}`}
+        </div>
+      )}
+      <Handle type="source" position={Position.Bottom} className="!bg-amber-400 !w-3 !h-3" />
+    </div>
+  )
+}
+
 const nodeTypes = {
   start: StartNode,
   category: CategoryNode,
   faq: FaqNode,
   message: MessageNode,
+  branch: BranchNode,
+  faqLookup: FaqLookupNode,
+  collect: CollectNode,
   callback: CallbackNode,
   notify: NotifyNode,
   sms: SmsNode,
@@ -290,6 +356,7 @@ function FlowCanvas({
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const { screenToFlowPosition } = useReactFlow()
@@ -299,6 +366,17 @@ function FlowCanvas({
     () => nodes.find(n => n.id === selectedId) ?? null,
     [nodes, selectedId],
   )
+
+  const selectedEdge = useMemo(
+    () => edges.find(e => e.id === selectedEdgeId) ?? null,
+    [edges, selectedEdgeId],
+  )
+
+  // 選択エッジの起点ノード種別（分岐/FAQで条件UIを出し分け）
+  const selectedEdgeSourceType = useMemo(() => {
+    if (!selectedEdge) return null
+    return nodes.find(n => n.id === selectedEdge.source)?.type ?? null
+  }, [selectedEdge, nodes])
 
   const onConnect = useCallback(
     (params: Connection) => setEdges(eds => addEdge({ ...params, ...defaultEdgeOptions }, eds)),
@@ -325,11 +403,14 @@ function FlowCanvas({
       idCounter.current += 1
       const id = `n-${Date.now()}-${idCounter.current}`
       const defaults: Record<string, Record<string, unknown>> = {
-        message:  { label: 'メッセージ', message: '', stateKey: '' },
-        callback: { message: '' },
-        notify:   { message: '', stateKey: 'CALLBACK_CONFIRM' },
-        sms:      { message: '', stateKey: 'CALLBACK_CONFIRM' },
-        end:      { stateKey: 'END', message: '' },
+        message:   { label: 'メッセージ', message: '', stateKey: '' },
+        branch:    { message: '' },
+        faqLookup: { message: 'ご用件をお聞かせください。' },
+        collect:   { message: '', variable: '' },
+        callback:  { message: '' },
+        notify:    { message: '', stateKey: 'CALLBACK_CONFIRM' },
+        sms:       { message: '', stateKey: 'CALLBACK_CONFIRM' },
+        end:       { stateKey: 'END', message: '' },
       }
       const newNode: Node = {
         id, type: kind, position,
@@ -346,6 +427,23 @@ function FlowCanvas({
     if (!selectedId) return
     setNodes(nds =>
       nds.map(n => (n.id === selectedId ? { ...n, data: { ...n.data, ...patch } } : n)),
+    )
+  }
+
+  // 選択エッジの data を更新（条件・ラベル）
+  function updateSelectedEdge(patch: Record<string, unknown>, label?: string) {
+    if (!selectedEdgeId) return
+    setEdges(eds =>
+      eds.map(e =>
+        e.id === selectedEdgeId
+          ? {
+              ...e,
+              data: { ...e.data, ...patch },
+              ...(label !== undefined ? { label } : {}),
+              labelStyle: { fontSize: 11, fill: '#7c3aed', fontWeight: 600 },
+            }
+          : e,
+      ),
     )
   }
 
@@ -377,18 +475,23 @@ function FlowCanvas({
       <div className="w-44 shrink-0 bg-white rounded-2xl border border-slate-200 shadow-sm p-3 flex flex-col gap-2">
         <p className="text-xs font-semibold text-slate-700 mb-1">ノードを追加</p>
         <p className="text-[10px] text-slate-400 mb-2">下のブロックをキャンバスにドラッグ＆ドロップ</p>
-        {PALETTE.map(p => (
-          <div
-            key={p.kind}
-            draggable
-            onDragStart={e => onPaletteDragStart(e, p.kind)}
-            className="cursor-grab active:cursor-grabbing border border-slate-200 rounded-xl px-3 py-2 hover:border-yellow-400 hover:bg-yellow-50 transition select-none"
-          >
-            <div className="flex items-center gap-2">
-              <span>{p.icon}</span>
-              <span className="text-sm font-medium text-slate-700">{p.label}</span>
-            </div>
-            <p className="text-[10px] text-slate-400 mt-0.5">{p.desc}</p>
+        {['発話', '分岐', 'アクション', '終了'].map(group => (
+          <div key={group} className="flex flex-col gap-1.5">
+            <p className="text-[10px] font-semibold text-slate-400 mt-1">{group}</p>
+            {PALETTE.filter(p => p.group === group).map(p => (
+              <div
+                key={p.kind}
+                draggable
+                onDragStart={e => onPaletteDragStart(e, p.kind)}
+                className="cursor-grab active:cursor-grabbing border border-slate-200 rounded-xl px-3 py-2 hover:border-yellow-400 hover:bg-yellow-50 transition select-none"
+              >
+                <div className="flex items-center gap-2">
+                  <span>{p.icon}</span>
+                  <span className="text-sm font-medium text-slate-700">{p.label}</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-0.5">{p.desc}</p>
+              </div>
+            ))}
           </div>
         ))}
 
@@ -409,7 +512,10 @@ function FlowCanvas({
           onConnect={onConnect}
           onDrop={onDrop}
           onDragOver={onDragOver}
-          onSelectionChange={({ nodes: sel }) => setSelectedId(sel[0]?.id ?? null)}
+          onSelectionChange={({ nodes: sel, edges: selE }) => {
+            setSelectedId(sel[0]?.id ?? null)
+            setSelectedEdgeId(selE[0]?.id ?? null)
+          }}
           nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{ padding: 0.2 }}
@@ -425,6 +531,9 @@ function FlowCanvas({
               if (n.type === 'callback') return '#86efac'
               if (n.type === 'notify') return '#fdba74'
               if (n.type === 'sms') return '#7dd3fc'
+              if (n.type === 'branch') return '#a78bfa'
+              if (n.type === 'faqLookup') return '#60a5fa'
+              if (n.type === 'collect') return '#fbbf24'
               if (n.type === 'message') return '#cbd5e1'
               return '#e2e8f0'
             }}
@@ -449,12 +558,20 @@ function FlowCanvas({
         </ReactFlow>
       </div>
 
-      {/* ノード編集パネル */}
+      {/* ノード/エッジ編集パネル */}
       <div className="w-72 shrink-0 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 overflow-auto">
-        {!selectedNode ? (
+        {selectedEdge ? (
+          <EdgeEditor
+            sourceType={selectedEdgeSourceType}
+            edge={selectedEdge}
+            onUpdate={updateSelectedEdge}
+          />
+        ) : !selectedNode ? (
           <p className="text-slate-400 text-sm text-center py-12">
-            ノードを選択すると<br />ここで内容を編集できます
+            ノードや線（エッジ）を選択すると<br />ここで内容を編集できます
           </p>
+        ) : GRAPH_KINDS.has(selectedNode.type ?? '') ? (
+          <GraphNodeEditor node={selectedNode} onUpdate={updateSelected} />
         ) : selectedNode.type === 'faq' ? (
           <div>
             <h3 className="font-semibold text-slate-700 mb-2 text-sm">FAQ回答ノード</h3>
@@ -596,6 +713,167 @@ function FlowCanvas({
           </div>
         ) : null}
       </div>
+    </div>
+  )
+}
+
+// ============================================================
+// グラフノード（分岐/FAQ検索/スロット収集）の編集パネル
+// ============================================================
+function GraphNodeEditor({
+  node,
+  onUpdate,
+}: {
+  node: Node
+  onUpdate: (patch: Record<string, unknown>) => void
+}) {
+  const d = node.data as { message?: string; variable?: string }
+  const kind = node.type
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h3 className="font-semibold text-slate-700 text-sm">
+        {kind === 'branch' ? '🔀 条件分岐ノード'
+          : kind === 'faqLookup' ? '🔎 FAQ検索ノード'
+          : '🎙️ スロット収集ノード'}
+      </h3>
+
+      <p className="text-[11px] text-slate-500 leading-relaxed">
+        {kind === 'branch'
+          ? '質問を投げ、相手の発言で枝分かれします。各出口の線（エッジ）を選んでキーワードを設定してください。'
+          : kind === 'faqLookup'
+          ? '相手の発言でFAQを意味検索します。出口の線を「ヒット時」「ミス時」に設定してください。'
+          : '相手の発言を聞き取り、変数に保存します。後のノードで {{変数名}} として差し込めます。'}
+      </p>
+
+      <div>
+        <label className="text-xs text-slate-500 mb-1 block">
+          {kind === 'collect' ? '質問文（何を聞くか）' : kind === 'faqLookup' ? '聞き出し文' : '質問文'}
+        </label>
+        <textarea
+          value={d.message ?? ''}
+          onChange={e => onUpdate({ message: e.target.value })}
+          rows={3}
+          placeholder={kind === 'branch'
+            ? '例：ご予約ですか、その他のお問い合わせですか？'
+            : kind === 'faqLookup'
+            ? '例：ご用件をお聞かせください。'
+            : '例：お名前をお聞かせいただけますか？'}
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
+        />
+      </div>
+
+      {kind === 'collect' && (
+        <div>
+          <label className="text-xs text-slate-500 mb-1 block">保存先の変数名（英数字）</label>
+          <input
+            value={d.variable ?? ''}
+            onChange={e => onUpdate({ variable: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') })}
+            placeholder="例：name / company / order_no"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          />
+          <p className="text-[11px] text-slate-400 mt-1">
+            後のノードで <code className="bg-slate-100 px-1 rounded">{d.variable ? `{{${d.variable}}}` : '{{変数名}}'}</code> として使えます。
+          </p>
+        </div>
+      )}
+
+      <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-3">
+        出口の線（エッジ）をクリックすると、条件を設定できます。
+      </p>
+    </div>
+  )
+}
+
+// ============================================================
+// エッジ（線）の条件編集パネル
+// ============================================================
+function EdgeEditor({
+  sourceType,
+  edge,
+  onUpdate,
+}: {
+  sourceType: string | null
+  edge: Edge
+  onUpdate: (patch: Record<string, unknown>, label?: string) => void
+}) {
+  const data = (edge.data ?? {}) as { keywords?: string[]; when?: string; isDefault?: boolean }
+
+  // FAQ検索の出口: ヒット/ミス
+  if (sourceType === 'faqLookup') {
+    return (
+      <div className="flex flex-col gap-4">
+        <h3 className="font-semibold text-slate-700 text-sm">🔎 FAQ検索の出口</h3>
+        <p className="text-[11px] text-slate-500">この線をどちらの結果に使うか選びます。</p>
+        <div className="flex flex-col gap-2">
+          {[
+            { v: 'hit', label: '✅ ヒット時（FAQが見つかった）' },
+            { v: 'miss', label: '❌ ミス時（見つからなかった）' },
+          ].map(o => (
+            <button
+              key={o.v}
+              onClick={() => onUpdate({ when: o.v }, o.v === 'hit' ? 'ヒット' : 'ミス')}
+              className={`text-left text-sm px-3 py-2 rounded-lg border transition ${
+                data.when === o.v
+                  ? 'border-blue-400 bg-blue-50 text-blue-700 font-medium'
+                  : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // 条件分岐の出口: キーワード or デフォルト
+  if (sourceType === 'branch') {
+    return (
+      <div className="flex flex-col gap-4">
+        <h3 className="font-semibold text-slate-700 text-sm">🔀 分岐の出口</h3>
+        <p className="text-[11px] text-slate-500">
+          相手の発言にこのキーワードが含まれていたら、この線へ進みます。
+        </p>
+        <div>
+          <label className="text-xs text-slate-500 mb-1 block">キーワード（カンマ区切り・いずれか一致）</label>
+          <input
+            value={(data.keywords ?? []).join(', ')}
+            onChange={e => {
+              const kws = e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+              onUpdate({ keywords: kws, isDefault: false }, kws.join(' / '))
+            }}
+            disabled={data.isDefault}
+            placeholder="例：予約, よやく, 取りたい"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-slate-50 disabled:text-slate-300"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={data.isDefault ?? false}
+            onChange={e => onUpdate(
+              { isDefault: e.target.checked, keywords: e.target.checked ? [] : data.keywords ?? [] },
+              e.target.checked ? 'その他' : '',
+            )}
+            className="accent-violet-500"
+          />
+          その他（どれにも一致しない時）
+        </label>
+        <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-3">
+          複数の出口にキーワードを設定し、1つを「その他」にしておくと取りこぼしません。
+        </p>
+      </div>
+    )
+  }
+
+  // 通常のエッジ
+  return (
+    <div>
+      <h3 className="font-semibold text-slate-700 text-sm mb-2">線（エッジ）</h3>
+      <p className="text-[11px] text-slate-400">
+        この線の起点は分岐ノードではないため、条件はありません。ノードからノードへ順番に進みます。
+      </p>
     </div>
   )
 }
