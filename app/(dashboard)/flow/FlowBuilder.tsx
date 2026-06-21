@@ -727,7 +727,7 @@ function GraphNodeEditor({
   node: Node
   onUpdate: (patch: Record<string, unknown>) => void
 }) {
-  const d = node.data as { message?: string; variable?: string }
+  const d = node.data as { message?: string; variable?: string; searchingMessage?: string }
   const kind = node.type
 
   return (
@@ -763,6 +763,21 @@ function GraphNodeEditor({
         />
       </div>
 
+      {kind === 'faqLookup' && (
+        <div>
+          <label className="text-xs text-slate-500 mb-1 block">検索中のひとこと（任意）</label>
+          <input
+            value={d.searchingMessage ?? ''}
+            onChange={e => onUpdate({ searchingMessage: e.target.value })}
+            placeholder="お調べしますので少々お待ちください。"
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          />
+          <p className="text-[11px] text-slate-400 mt-1">
+            FAQ検索には数秒かかります。検索中にこの一言を読み上げて間を埋めます。空欄なら「お調べしますので少々お待ちください。」
+          </p>
+        </div>
+      )}
+
       {kind === 'collect' && (
         <div>
           <label className="text-xs text-slate-500 mb-1 block">保存先の変数名（英数字）</label>
@@ -797,7 +812,7 @@ function EdgeEditor({
   edge: Edge
   onUpdate: (patch: Record<string, unknown>, label?: string) => void
 }) {
-  const data = (edge.data ?? {}) as { keywords?: string[]; when?: string; isDefault?: boolean }
+  const data = (edge.data ?? {}) as { keywords?: string[]; keywordsText?: string; when?: string; isDefault?: boolean }
 
   // FAQ検索の出口: ヒット/ミス
   if (sourceType === 'faqLookup') {
@@ -836,15 +851,17 @@ function EdgeEditor({
           相手の発言にこのキーワードが含まれていたら、この線へ進みます。
         </p>
         <div>
-          <label className="text-xs text-slate-500 mb-1 block">キーワード（カンマ区切り・いずれか一致）</label>
+          <label className="text-xs text-slate-500 mb-1 block">キーワード（カンマ「,」または「、」区切り・いずれか一致）</label>
           <input
-            value={(data.keywords ?? []).join(', ')}
+            value={data.keywordsText ?? (data.keywords ?? []).join('、')}
             onChange={e => {
-              const kws = e.target.value.split(',').map(s => s.trim()).filter(Boolean)
-              onUpdate({ keywords: kws, isDefault: false }, kws.join(' / '))
+              const raw = e.target.value
+              const kws = raw.split(/[,、]/).map(s => s.trim()).filter(Boolean)
+              // 生テキスト(keywordsText)を保持して表示し、配列(keywords)はエンジン用に保存
+              onUpdate({ keywordsText: raw, keywords: kws, isDefault: false }, kws.join(' / '))
             }}
             disabled={data.isDefault}
-            placeholder="例：予約, よやく, 取りたい"
+            placeholder="例：予約、よやく、取りたい"
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-slate-50 disabled:text-slate-300"
           />
         </div>
@@ -853,8 +870,10 @@ function EdgeEditor({
             type="checkbox"
             checked={data.isDefault ?? false}
             onChange={e => onUpdate(
-              { isDefault: e.target.checked, keywords: e.target.checked ? [] : data.keywords ?? [] },
-              e.target.checked ? 'その他' : '',
+              e.target.checked
+                ? { isDefault: true, keywords: [] }
+                : { isDefault: false, keywords: data.keywords ?? [] },
+              e.target.checked ? 'その他' : (data.keywords ?? []).join(' / '),
             )}
             className="accent-violet-500"
           />
