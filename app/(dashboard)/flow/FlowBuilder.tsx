@@ -59,6 +59,14 @@ const ACTION_KINDS = new Set(['notify', 'sms'])
 // グラフ駆動ノード（分岐系）
 const GRAPH_KINDS = new Set(['branch', 'faqLookup', 'collect'])
 
+// 通知/SMSのデフォルト文面
+const DEFAULT_NOTIFY_TEMPLATE =
+  `{{employee}} 宛に、{{company}} の {{name}} 様よりご連絡がありました。\n\n` +
+  `内容：{{requirements}}\n` +
+  `折返し希望時間：{{time}}\n` +
+  `連絡先：{{phonenumber}}\n\n` +
+  `ご確認の上、ご連絡をお願いいたします。`
+
 // ---- カスタムノード ----
 
 function StartNode() {
@@ -116,11 +124,12 @@ function MessageNode({ data }: { data: { label?: string; message?: string; state
   )
 }
 
-function CallbackNode({ data }: { data: { message?: string; askCompany?: boolean; askName?: boolean; askRecipient?: boolean } }) {
+function CallbackNode({ data }: { data: { message?: string; askCompany?: boolean; askName?: boolean; askRecipient?: boolean; askRequirements?: boolean } }) {
   const items = [
     data.askCompany && '会社名',
     data.askName && 'お名前',
     data.askRecipient && '宛先',
+    data.askRequirements && '要件',
     '電話番号',
   ].filter(Boolean) as string[]
   return (
@@ -412,9 +421,9 @@ function FlowCanvas({
         message:   { label: 'メッセージ', message: '', stateKey: '' },
         branch:    { message: '' },
         faqLookup: { message: 'ご用件をお聞かせください。' },
-        callback:  { message: '', askName: true, askCompany: false, askRecipient: false },
-        notify:    { message: '', stateKey: 'CALLBACK_CONFIRM' },
-        sms:       { message: '', stateKey: 'CALLBACK_CONFIRM' },
+        callback:  { message: '', askName: true, askCompany: false, askRecipient: false, askRequirements: true },
+        notify:    { message: DEFAULT_NOTIFY_TEMPLATE, stateKey: 'CALLBACK_CONFIRM' },
+        sms:       { message: DEFAULT_NOTIFY_TEMPLATE, stateKey: 'CALLBACK_CONFIRM' },
         end:       { stateKey: 'END', message: '' },
       }
       const newNode: Node = {
@@ -643,6 +652,8 @@ function FlowCanvas({
                 使える差し込み: <code className="bg-slate-100 px-1 rounded">{'{{company}}'}</code> 会社名 /{' '}
                 <code className="bg-slate-100 px-1 rounded">{'{{name}}'}</code> お客様名 /{' '}
                 <code className="bg-slate-100 px-1 rounded">{'{{employee}}'}</code> 担当者 /{' '}
+                <code className="bg-slate-100 px-1 rounded">{'{{requirements}}'}</code> 要件 /{' '}
+                <code className="bg-slate-100 px-1 rounded">{'{{phonenumber}}'}</code> 連絡先 /{' '}
                 <code className="bg-slate-100 px-1 rounded">{'{{time}}'}</code> 折返し時間
               </p>
             </div>
@@ -734,11 +745,12 @@ function CallbackNodeEditor({
   node: Node
   onUpdate: (patch: Record<string, unknown>) => void
 }) {
-  const d = node.data as { message?: string; askCompany?: boolean; askName?: boolean; askRecipient?: boolean }
-  const checks: { key: 'askCompany' | 'askName' | 'askRecipient'; label: string }[] = [
-    { key: 'askCompany',   label: '会社名を聞く' },
-    { key: 'askName',      label: 'お客様のお名前を聞く' },
-    { key: 'askRecipient', label: '誰宛の連絡かを聞く' },
+  const d = node.data as { message?: string; askCompany?: boolean; askName?: boolean; askRecipient?: boolean; askRequirements?: boolean }
+  const checks: { key: 'askCompany' | 'askName' | 'askRecipient' | 'askRequirements'; label: string }[] = [
+    { key: 'askCompany',      label: '会社名を聞く' },
+    { key: 'askName',         label: 'お客様のお名前を聞く' },
+    { key: 'askRecipient',    label: '誰宛の連絡かを聞く' },
+    { key: 'askRequirements', label: 'ご用件（要件）を聞く' },
   ]
   return (
     <div className="flex flex-col gap-4">
