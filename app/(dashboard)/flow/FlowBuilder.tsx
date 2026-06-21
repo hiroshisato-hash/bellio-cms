@@ -48,8 +48,7 @@ const PALETTE: { kind: string; label: string; icon: string; desc: string; group:
   { kind: 'message',   label: 'メッセージ',  icon: '💬', desc: 'AIが話す内容',       group: '発話' },
   { kind: 'branch',    label: '条件分岐',    icon: '🔀', desc: '発言で枝分かれ',     group: '分岐' },
   { kind: 'faqLookup', label: 'FAQ検索',     icon: '🔎', desc: 'ヒット/ミスで分岐',  group: '分岐' },
-  { kind: 'collect',   label: 'スロット収集', icon: '🎙️', desc: '聞いて変数に保存',  group: '分岐' },
-  { kind: 'callback',  label: '折り返し受付', icon: '🔔', desc: '折り返しを登録',     group: 'アクション' },
+  { kind: 'callback',  label: '折り返し受付', icon: '🔔', desc: '項目を聞いて登録',   group: 'アクション' },
   { kind: 'notify',    label: '通知',        icon: '📢', desc: '担当者へSlack通知',  group: 'アクション' },
   { kind: 'sms',       label: 'SMS送信',     icon: '📨', desc: '発信者へSMS',        group: 'アクション' },
   { kind: 'end',       label: '通話終了',    icon: '👋', desc: '通話を終える',       group: '終了' },
@@ -117,12 +116,19 @@ function MessageNode({ data }: { data: { label?: string; message?: string; state
   )
 }
 
-function CallbackNode({ data }: { data: { message?: string } }) {
+function CallbackNode({ data }: { data: { message?: string; askCompany?: boolean; askName?: boolean; askRecipient?: boolean } }) {
+  const items = [
+    data.askCompany && '会社名',
+    data.askName && 'お名前',
+    data.askRecipient && '宛先',
+    '電話番号',
+  ].filter(Boolean) as string[]
   return (
     <div className="bg-green-50 border border-green-300 rounded-2xl shadow-sm px-5 py-3 min-w-[140px] max-w-[240px] text-center">
       <Handle type="target" position={Position.Top} className="!bg-green-400 !w-3 !h-3" />
       <div className="text-lg mb-0.5">🔔</div>
       <div className="font-bold text-slate-700 text-sm">折り返し受付</div>
+      <div className="text-[10px] text-green-700 mt-1">聞く: {items.join('・')}</div>
       {data.message && <div className="text-xs text-slate-500 line-clamp-2 mt-1">「{data.message}」</div>}
       <Handle type="source" position={Position.Bottom} className="!bg-green-400 !w-3 !h-3" />
     </div>
@@ -406,8 +412,7 @@ function FlowCanvas({
         message:   { label: 'メッセージ', message: '', stateKey: '' },
         branch:    { message: '' },
         faqLookup: { message: 'ご用件をお聞かせください。' },
-        collect:   { message: '', variable: '' },
-        callback:  { message: '' },
+        callback:  { message: '', askName: true, askCompany: false, askRecipient: false },
         notify:    { message: '', stateKey: 'CALLBACK_CONFIRM' },
         sms:       { message: '', stateKey: 'CALLBACK_CONFIRM' },
         end:       { stateKey: 'END', message: '' },
@@ -572,6 +577,8 @@ function FlowCanvas({
           </p>
         ) : GRAPH_KINDS.has(selectedNode.type ?? '') ? (
           <GraphNodeEditor node={selectedNode} onUpdate={updateSelected} />
+        ) : selectedNode.type === 'callback' ? (
+          <CallbackNodeEditor node={selectedNode} onUpdate={updateSelected} />
         ) : selectedNode.type === 'faq' ? (
           <div>
             <h3 className="font-semibold text-slate-700 mb-2 text-sm">FAQ回答ノード</h3>
@@ -713,6 +720,65 @@ function FlowCanvas({
           </div>
         ) : null}
       </div>
+    </div>
+  )
+}
+
+// ============================================================
+// 折り返し受付ノードの編集パネル（聞き取り項目のチェックボックス）
+// ============================================================
+function CallbackNodeEditor({
+  node,
+  onUpdate,
+}: {
+  node: Node
+  onUpdate: (patch: Record<string, unknown>) => void
+}) {
+  const d = node.data as { message?: string; askCompany?: boolean; askName?: boolean; askRecipient?: boolean }
+  const checks: { key: 'askCompany' | 'askName' | 'askRecipient'; label: string }[] = [
+    { key: 'askCompany',   label: '会社名を聞く' },
+    { key: 'askName',      label: 'お客様のお名前を聞く' },
+    { key: 'askRecipient', label: '誰宛の連絡かを聞く' },
+  ]
+  return (
+    <div className="flex flex-col gap-4">
+      <h3 className="font-semibold text-slate-700 text-sm">🔔 折り返し受付ノード</h3>
+      <p className="text-[11px] text-slate-500 leading-relaxed">
+        折り返しの受付で、何をヒアリングするか選びます。チェックした項目を順番に聞き取ります。
+      </p>
+
+      <div>
+        <label className="text-xs text-slate-500 mb-1 block">導入のひとこと（任意）</label>
+        <input
+          value={d.message ?? ''}
+          onChange={e => onUpdate({ message: e.target.value })}
+          placeholder="例：折り返しのご連絡を承ります。"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label className="text-xs text-slate-500">聞き取る項目</label>
+        {checks.map(c => (
+          <label key={c.key} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={d[c.key] ?? false}
+              onChange={e => onUpdate({ [c.key]: e.target.checked })}
+              className="accent-green-500"
+            />
+            {c.label}
+          </label>
+        ))}
+        <div className="flex items-center gap-2 text-sm text-slate-400 mt-1">
+          <input type="checkbox" checked disabled className="accent-slate-300" />
+          お電話番号の確認（必須・常に確認）
+        </div>
+      </div>
+
+      <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-3 leading-relaxed">
+        電話番号は「お電話番号は、ただいまお掛けのお電話番号でよろしいでしょうか。」と必ず確認します。聞き取った内容は折り返しキューに登録されます。
+      </p>
     </div>
   )
 }
