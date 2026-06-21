@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -35,7 +36,16 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   return (
     <aside className="w-56 min-h-screen bg-slate-800 flex flex-col">
       <div className="px-6 py-5 border-b border-slate-700">
-        <span className="text-white font-bold text-lg tracking-wide">Bellio</span>
+        <div className="bg-white rounded-lg px-3 py-2 inline-block">
+          <Image
+            src="/bellio-logo.png"
+            alt="Bellio"
+            width={500}
+            height={130}
+            priority
+            className="h-7 w-auto"
+          />
+        </div>
         {isAdmin && (
           <span className="text-purple-400 text-xs block">Admin viewing</span>
         )}
