@@ -4,6 +4,7 @@ import { getCurrentTenantId } from '@/lib/get-current-tenant'
 import FaqForm from './FaqForm'
 import FaqDelete from './FaqDelete'
 import CategoryManager from './CategoryManager'
+import FaqImportExport from './FaqImportExport'
 import type { Category } from './CategoryManager'
 
 export const revalidate = 0
@@ -81,6 +82,7 @@ export default async function FaqsPage() {
         <span className="text-slate-400 text-sm">{faqList.length} 件</span>
       </div>
 
+      <FaqImportExport tenantId={tenantId} />
       <CategoryManager tenantId={tenantId} categories={cats} />
       <FaqForm tenantId={tenantId} categories={cats} />
 
