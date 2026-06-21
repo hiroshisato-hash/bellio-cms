@@ -27,7 +27,7 @@ type FAQ = { id: string; question: string; answer: string; category_id: string |
 // voice 側の CallState と一致させる（紐付け可能なステート）
 // FAQ_ANSWERING は DB回答を使うため除外
 const STATE_OPTIONS: { key: string; label: string; hint: string }[] = [
-  { key: 'GREETING',                 label: '最初の挨拶',          hint: '着信して最初に話す内容' },
+  // 「最初の挨拶」は固定（着信ノード直下に表示・編集不可）のため選択肢から除外
   { key: 'INTENT_HEARING',           label: '用件の聞き直し',      hint: '用件がうまく取れなかった時' },
   { key: 'SATISFACTION_CHECK',       label: '解決確認',            hint: 'FAQ回答後「他にありますか？」' },
   { key: 'CALLBACK_INTAKE_NAME',     label: 'お名前を尋ねる',      hint: '折り返しの名前ヒアリング' },
@@ -59,6 +59,10 @@ const ACTION_KINDS = new Set(['notify', 'sms'])
 // グラフ駆動ノード（分岐系）
 const GRAPH_KINDS = new Set(['branch', 'faqLookup', 'collect'])
 
+// 最初の挨拶（固定・編集不可）。voice 側で必ず読み上げる。
+const FIXED_GREETING_DISPLAY =
+  'お電話ありがとうございます。{{会社名}}です。この通話は品質向上およびAIの改善のため録音されます。'
+
 // 通知/SMSのデフォルト文面
 const DEFAULT_NOTIFY_TEMPLATE =
   `{{employee}} 宛に、{{company}} の {{name}} 様よりご連絡がありました。\n\n` +
@@ -71,9 +75,20 @@ const DEFAULT_NOTIFY_TEMPLATE =
 
 function StartNode() {
   return (
-    <div className="bg-slate-800 text-white px-5 py-3 rounded-2xl shadow-lg text-center min-w-[140px]">
-      <div className="text-lg mb-0.5">📞</div>
-      <div className="font-bold text-sm">電話着信</div>
+    <div className="flex flex-col items-center">
+      <div className="bg-slate-800 text-white px-5 py-3 rounded-2xl shadow-lg text-center min-w-[140px]">
+        <div className="text-lg mb-0.5">📞</div>
+        <div className="font-bold text-sm">電話着信</div>
+      </div>
+      {/* 最初の挨拶（固定・編集不可） */}
+      <div className="w-px h-3 bg-slate-300" />
+      <div className="bg-slate-100 border border-dashed border-slate-300 rounded-xl px-3 py-2 max-w-[230px] text-center">
+        <div className="flex items-center justify-center gap-1 mb-0.5">
+          <span className="text-xs">🔒</span>
+          <span className="text-[10px] font-semibold text-slate-500">最初の挨拶（固定）</span>
+        </div>
+        <div className="text-[10px] text-slate-500 leading-snug">{FIXED_GREETING_DISPLAY}</div>
+      </div>
       <Handle type="source" position={Position.Bottom} className="!bg-yellow-400 !w-3 !h-3" />
     </div>
   )
@@ -481,7 +496,7 @@ function FlowCanvas({
   }
 
   // 発話文を編集できるノード種別か
-  const editable = selectedNode && ['message', 'callback', 'end', 'start'].includes(selectedNode.type ?? '')
+  const editable = selectedNode && ['message', 'callback', 'end'].includes(selectedNode.type ?? '')
 
   return (
     <div className="flex gap-3 h-[calc(100vh-9rem)]">
@@ -586,6 +601,20 @@ function FlowCanvas({
           </p>
         ) : GRAPH_KINDS.has(selectedNode.type ?? '') ? (
           <GraphNodeEditor node={selectedNode} onUpdate={updateSelected} />
+        ) : selectedNode.type === 'start' ? (
+          <div>
+            <h3 className="font-semibold text-slate-700 mb-2 text-sm">📞 電話着信ノード</h3>
+            <div className="bg-slate-50 border border-dashed border-slate-300 rounded-lg p-3 mt-2">
+              <div className="flex items-center gap-1 mb-1">
+                <span className="text-xs">🔒</span>
+                <span className="text-[11px] font-semibold text-slate-500">最初の挨拶（固定・編集不可）</span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">{FIXED_GREETING_DISPLAY}</p>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-3 leading-relaxed">
+              最初の挨拶は録音案内を含む固定文です。{'{{会社名}}'} は通話時にテナントの会社名に置き換わります。変更はできません。
+            </p>
+          </div>
         ) : selectedNode.type === 'callback' ? (
           <CallbackNodeEditor node={selectedNode} onUpdate={updateSelected} />
         ) : selectedNode.type === 'faq' ? (
