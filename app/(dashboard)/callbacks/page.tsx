@@ -31,7 +31,7 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
   pending:     { label: '未対応',     cls: 'bg-orange-100 text-orange-700' },
   in_progress: { label: '対応中',     cls: 'bg-blue-100 text-blue-700' },
   completed:   { label: '完了',       cls: 'bg-green-100 text-green-700' },
-  cancelled:   { label: 'キャンセル', cls: 'bg-slate-100 text-slate-500' },
+  cancelled:   { label: '対応不要', cls: 'bg-slate-100 text-slate-500' },
 }
 
 function db() {
