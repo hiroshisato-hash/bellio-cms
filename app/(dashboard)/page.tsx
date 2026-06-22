@@ -65,11 +65,13 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Super Admin はテナント横断の管理画面へ
-  if (user?.email === SUPER_ADMIN_EMAIL) redirect('/admin')
-
+  // テナント解決: 一般ユーザーは自テナント、Super Admin は閲覧中テナント(cookie)。
+  // Admin がテナント未選択のときだけ管理画面へ。選択中なら当該テナントのダッシュボードを表示。
   const tenantId = await getCurrentTenantId(user?.email)
-  if (!tenantId) return <p className="text-slate-500">テナントが選択されていません</p>
+  if (!tenantId) {
+    if (user?.email === SUPER_ADMIN_EMAIL) redirect('/admin')
+    return <p className="text-slate-500">テナントが選択されていません</p>
+  }
 
   const supa = db()
   // 「本日」は JST 基準で算出（サーバーは UTC のため +9h して日付を取る）
