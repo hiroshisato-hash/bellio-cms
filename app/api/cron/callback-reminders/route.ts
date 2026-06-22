@@ -39,7 +39,7 @@ async function postSlack(url: string, text: string) {
   }
 }
 
-// Vercel Cron で定期実行（vercel.json の crons 参照）。
+// 定期実行で叩かれるエンドポイント（.github/workflows/callback-reminders.yml が5分毎にcurl）。
 //  1) 受信から30分以上 未対応(pending) → 「未対応です」リマインド（reminded_at で重複防止）
 //  2) 折返し希望時刻の5分前 → 「お電話するお時間です」リマインド（due_reminded_at で重複防止）
 // staff向け通知は tenant_settings.notification_channels.slack に送る（SMSは発信者向けのため使わない）。
