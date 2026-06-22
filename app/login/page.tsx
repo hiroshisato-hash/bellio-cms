@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -69,6 +70,12 @@ export default function LoginPage() {
           >
             {loading ? 'ログイン中...' : 'ログイン'}
           </button>
+          <Link
+            href="/forgot-password"
+            className="text-center text-sm text-slate-500 hover:text-slate-700 transition"
+          >
+            パスワードをお忘れですか？
+          </Link>
         </form>
       </div>
     </div>
