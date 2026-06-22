@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
+  { href: '/',          label: 'ダッシュボード', icon: '📊' },
   { href: '/callbacks', label: '折り返しキュー', icon: '📞' },
   { href: '/staff',     label: '担当者管理',     icon: '👤' },
   { href: '/faqs',      label: 'FAQ管理',       icon: '💬' },
@@ -53,7 +54,7 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
       </div>
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
         {navItems.map(item => {
-          const active = pathname.startsWith(item.href)
+          const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
           return (
             <Link
               key={item.href}
