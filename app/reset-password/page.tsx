@@ -30,7 +30,15 @@ export default function ResetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password })
     setLoading(false)
     if (error) {
-      setError('再設定に失敗しました。リンクの有効期限が切れている可能性があります。お手数ですが再度お試しください')
+      if (error.code === 'same_password') {
+        setError('現在お使いのパスワードと同じです。別のパスワードを設定してください')
+      } else if (error.code === 'weak_password') {
+        setError('パスワードが弱すぎます。より複雑なパスワードを設定してください')
+      } else if (error.code === 'session_not_found' || error.status === 401 || error.status === 403) {
+        setError('リンクの有効期限が切れています。お手数ですが再度パスワード再設定をやり直してください')
+      } else {
+        setError('再設定に失敗しました。お手数ですが再度お試しください')
+      }
     } else {
       setDone(true)
       setTimeout(() => router.push('/'), 1500)
