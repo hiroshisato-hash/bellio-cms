@@ -27,9 +27,14 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
   const isAuthPage = pathname.startsWith('/login')
+  // パスワード再設定フロー（未ログインでアクセスする）は公開ルート扱い
+  const isPublicAuthFlow =
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/auth/')
   const isApiRoute = pathname.startsWith('/api/')
 
-  if (!user && !isAuthPage && !isApiRoute) {
+  if (!user && !isAuthPage && !isPublicAuthFlow && !isApiRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
