@@ -7,17 +7,18 @@ export const revalidate = 0
 type CallLog = {
   id: string
   caller_number: string
-  call_duration_seconds: number | null
-  outcome: string | null
+  duration_seconds: number | null
+  resolution_mode: string | null
   transcript: string | null
-  created_at: string
+  started_at: string
 }
 
-const outcomeLabel: Record<string, { label: string; cls: string }> = {
-  faq_resolved:    { label: 'FAQ解決', cls: 'bg-green-100 text-green-700' },
-  callback_queued: { label: '折り返し登録', cls: 'bg-blue-100 text-blue-700' },
-  urgent_alert:    { label: '緊急', cls: 'bg-red-100 text-red-700' },
-  hangup:          { label: '切断', cls: 'bg-slate-100 text-slate-500' },
+// call_logs.resolution_mode の表示マップ（DBの CHECK 制約に対応）
+const resolutionModeLabel: Record<string, { label: string; cls: string }> = {
+  faq_resolved:       { label: 'FAQ解決', cls: 'bg-green-100 text-green-700' },
+  callback_scheduled: { label: '折り返し', cls: 'bg-blue-100 text-blue-700' },
+  urgent_alert:       { label: '緊急', cls: 'bg-red-100 text-red-700' },
+  abandoned:          { label: '離脱', cls: 'bg-slate-100 text-slate-500' },
 }
 
 function formatDuration(secs: number | null) {
@@ -49,9 +50,9 @@ export default async function CallLogsPage() {
 
   const { data: logs } = await db()
     .from('call_logs')
-    .select('id, caller_number, call_duration_seconds, outcome, transcript, created_at')
+    .select('id, caller_number, duration_seconds, resolution_mode, transcript, started_at')
     .eq('tenant_id', tenantId)
-    .order('created_at', { ascending: false })
+    .order('started_at', { ascending: false })
     .limit(100)
 
   return (
@@ -81,12 +82,12 @@ export default async function CallLogsPage() {
               </tr>
             )}
             {logs?.map((log: CallLog) => {
-              const out = log.outcome ? (outcomeLabel[log.outcome] ?? { label: log.outcome, cls: 'bg-slate-100 text-slate-600' }) : null
+              const out = log.resolution_mode ? (resolutionModeLabel[log.resolution_mode] ?? { label: log.resolution_mode, cls: 'bg-slate-100 text-slate-600' }) : null
               return (
                 <tr key={log.id} className="hover:bg-slate-50 transition">
-                  <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(log.created_at)}</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(log.started_at)}</td>
                   <td className="px-4 py-3 font-mono text-slate-700">{log.caller_number}</td>
-                  <td className="px-4 py-3 text-slate-600">{formatDuration(log.call_duration_seconds)}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatDuration(log.duration_seconds)}</td>
                   <td className="px-4 py-3">
                     {out && <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${out.cls}`}>{out.label}</span>}
                   </td>

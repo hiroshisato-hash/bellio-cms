@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -29,8 +30,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-900">
       <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-slate-800">Bellio</h1>
-          <p className="text-slate-500 text-sm mt-1">管理画面にログイン</p>
+          <Image
+            src="/bellio-logo.png"
+            alt="Bellio"
+            width={500}
+            height={130}
+            priority
+            className="mx-auto h-12 w-auto"
+          />
+          <p className="text-slate-500 text-sm mt-3">管理画面にログイン</p>
         </div>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>

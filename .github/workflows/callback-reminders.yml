@@ -1,0 +1,27 @@
+name: Callback Reminders
+
+# 折り返しリマインドの外部トリガー（Vercel Hobbyは日1回までのため自前cronで5分間隔を実現）。
+# 注意: GitHub Actions の schedule はデフォルトブランチ(main)からのみ発火する。
+#       staging 検証時は workflow_dispatch で手動実行する。
+#       実行には以下が必要:
+#         - GitHub リポジトリ Secret: CRON_SECRET（CMS側の env CRON_SECRET と同じ値）
+#         - 任意で Variable: CRON_BASE_URL（未設定なら staging.bellioai.com）
+#         - CMS(Vercel) 側に env CRON_SECRET を設定（エンドポイントの Bearer 検証用）
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # 5分ごと（GitHub Actions は数分遅延しうる）
+  workflow_dispatch: {}
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger callback reminders
+        run: |
+          BASE="${{ vars.CRON_BASE_URL }}"
+          BASE="${BASE:-https://staging.bellioai.com}"
+          echo "Calling ${BASE}/api/cron/callback-reminders"
+          curl -fsS --max-time 60 -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${BASE}/api/cron/callback-reminders"

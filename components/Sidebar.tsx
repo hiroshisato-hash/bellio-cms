@@ -1,13 +1,16 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
+  { href: '/',          label: 'ダッシュボード', icon: '📊' },
   { href: '/callbacks', label: '折り返しキュー', icon: '📞' },
   { href: '/staff',     label: '担当者管理',     icon: '👤' },
   { href: '/faqs',      label: 'FAQ管理',       icon: '💬' },
+  { href: '/flow',      label: '会話フロー',     icon: '🔀' },
   { href: '/call-logs', label: '通話履歴',       icon: '📋' },
   { href: '/settings',  label: '設定',           icon: '⚙️' },
 ]
@@ -34,7 +37,14 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   return (
     <aside className="w-56 min-h-screen bg-slate-800 flex flex-col">
       <div className="px-6 py-5 border-b border-slate-700">
-        <span className="text-white font-bold text-lg tracking-wide">Bellio</span>
+        <Image
+          src="/bellio-logo-white.png"
+          alt="Bellio"
+          width={1540}
+          height={1064}
+          priority
+          className="w-40 h-auto"
+        />
         {isAdmin && (
           <span className="text-purple-400 text-xs block">Admin viewing</span>
         )}
@@ -44,7 +54,7 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
       </div>
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
         {navItems.map(item => {
-          const active = pathname.startsWith(item.href)
+          const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
           return (
             <Link
               key={item.href}
