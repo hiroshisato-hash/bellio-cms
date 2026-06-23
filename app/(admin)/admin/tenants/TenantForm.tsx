@@ -24,8 +24,40 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
 
   const [saving, setSaving] = useState(false)
   const [issuing, setIssuing] = useState(false)
+  const [provisioning, setProvisioning] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  async function handleProvisionNumber() {
+    const ok = confirm(
+      `${companyName || 'このテナント'} に Twilio 050 番号を払い出します。\n\n` +
+        '在庫から 1 件購入し、月額 + 通話料が課金されます。\n' +
+        '既存の電話番号は新しい番号で上書きされます。よろしいですか？',
+    )
+    if (!ok) return
+    setProvisioning(true)
+    setError('')
+    setSuccess('')
+    try {
+      const res = await fetch('/api/admin/twilio/provision-number', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId: initialTenant?.id }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setError(json.error ?? 'エラー')
+      } else {
+        setPhoneNumber(json.phoneNumber)
+        setSuccess(`番号を払い出しました: ${json.phoneNumber}`)
+        router.refresh()
+      }
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setProvisioning(false)
+    }
+  }
 
   async function handleViewTenant() {
     await fetch('/api/admin/switch-tenant', {
@@ -104,13 +136,26 @@ export default function TenantForm({ initialTenant }: { initialTenant?: TenantDa
 
         <div>
           <label className="text-xs text-slate-400 mb-1 block">電話番号（E.164形式 例: +815012345678）</label>
-          <input
-            value={phoneNumber}
-            onChange={e => setPhoneNumber(e.target.value)}
-            required
-            placeholder="+815012345678"
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          />
+          <div className="flex gap-2">
+            <input
+              value={phoneNumber}
+              onChange={e => setPhoneNumber(e.target.value)}
+              required
+              placeholder="+815012345678"
+              className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            />
+            {isEdit && (
+              <button
+                type="button"
+                onClick={handleProvisionNumber}
+                disabled={provisioning}
+                title="Twilio から 050 番号を払い出し、phone_number に設定します"
+                className="whitespace-nowrap bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50"
+              >
+                {provisioning ? '取得中...' : '📞 番号払い出し'}
+              </button>
+            )}
+          </div>
         </div>
 
         <div>
